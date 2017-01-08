@@ -36,6 +36,7 @@ with zipfile.ZipFile(gtfsfile) as gtfs:
 			reader = csv.reader(tablereader)
 			header = next(reader)
 			print(header)
+			cur.execute("TRUNCATE TABLE {table};".format(table="gtfs_"+fname[:-4]))
 			copy_cmd = "COPY {table}({columns}) FROM STDIN WITH CSV DELIMITER '{delimiter}' HEADER"
 			cur.copy_expert(copy_cmd.format(table="gtfs_"+fname[:-4],columns=",".join(header),delimiter=delimiter),tablereader)
 			conn.commit()

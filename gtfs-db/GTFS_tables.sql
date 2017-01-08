@@ -8,8 +8,6 @@
  DROP TABLE IF EXISTS GTFS_CALENDAR CASCADE;
  DROP TABLE IF EXISTS GTFS_CALENDAR_DATES CASCADE;
 
- DROP VIEW IF EXISTS tram_stops;
-
  /*
  agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
  MTA NYCT,MTA New York City Transit, http://www.mta.info,America/New_York,en,718-330-1234
@@ -18,11 +16,11 @@
  CREATE TABLE GTFS_AGENCY
  (
  agency_id VARCHAR(10),
- agency_name VARCHAR(50),
+ agency_name VARCHAR(100),
  agency_url VARCHAR(100),
  agency_timezone VARCHAR(50),
  agency_lang VARCHAR(2),
- agency_phone VARCHAR(30)
+ agency_phone VARCHAR(50)
  );
 
  /*
@@ -33,10 +31,10 @@
 
  CREATE TABLE GTFS_ROUTES
  (
- route_id VARCHAR(10),
- agency_id NUMERIC(3),
+ route_id VARCHAR(20),
+ agency_id VARCHAR(10),
  route_short_name VARCHAR(10),
- route_long_name VARCHAR(100),
+ route_long_name VARCHAR(500),
  route_type NUMERIC(3),
  route_color VARCHAR(8)
  );
@@ -49,12 +47,12 @@
  */
 
  CREATE TABLE GTFS_STOPS
- ( stop_id VARCHAR(15),
+ ( stop_id VARCHAR(20),
  stop_name VARCHAR(100),
  stop_lat NUMERIC(38,8),
  stop_lon NUMERIC(38,8),
  location_type NUMERIC(2),
- parent_station VARCHAR(15),
+ parent_station VARCHAR(20),
  wheelchair_boarding NUMERIC(1)
  );
 
@@ -65,9 +63,9 @@
  */
  CREATE TABLE GTFS_TRIPS
  (
- route_id VARCHAR(10),
- service_id VARCHAR(10),
- trip_id NUMERIC(10),
+ route_id VARCHAR(20),
+ service_id VARCHAR(20),
+ trip_id VARCHAR(20),
  trip_headsign VARCHAR(50),
  shape_id NUMERIC(10),
  wheelchair_accessible NUMERIC(1)
@@ -85,13 +83,14 @@
 
  CREATE TABLE GTFS_STOP_TIMES
  (
- trip_id NUMERIC(10),
+ trip_id VARCHAR(20),
  arrival_time VARCHAR(8),
  departure_time VARCHAR(8),
  stop_id VARCHAR(15),
  stop_sequence NUMERIC(10),
  pickup_type NUMERIC(1),
- drop_off_type NUMERIC(1)
+ drop_off_type NUMERIC(1),
+ shape_dist_traveled DOUBLE PRECISION
  );
 
  CREATE INDEX ON GTFS_STOP_TIMES(trip_id);
@@ -117,7 +116,7 @@
 
  CREATE TABLE GTFS_CALENDAR_DATES
  (
- service_id VARCHAR(10),
+ service_id VARCHAR(20),
  --exception_date DATE,
  date DATE,
  exception_type VARCHAR(10)
@@ -131,7 +130,7 @@
 
  CREATE TABLE GTFS_CALENDAR
  (
- service_id VARCHAR(10),
+ service_id VARCHAR(20),
  monday NUMERIC(1),
  tuesday NUMERIC(1),
  wednesday NUMERIC(1),
@@ -146,18 +145,14 @@
 CREATE UNIQUE INDEX ON gtfs_stops(stop_id);
 CREATE UNIQUE INDEX ON gtfs_routes(route_id);
 CREATE UNIQUE INDEX ON gtfs_trips(trip_id);
+CREATE UNIQUE INDEX ON gtfs_calendar(service_id);
 
 CREATE INDEX ON gtfs_stop_times(trip_id);
 CREATE INDEX ON gtfs_stop_times(stop_id);
 CREATE INDEX ON gtfs_trips(route_id);
 CREATE INDEX ON gtfs_trips(shape_id);
 CREATE INDEX ON gtfs_shapes(shape_id);
+CREATE INDEX ON gtfs_trips(service_id);
+CREATE INDEX ON gtfs_calendar_dates(service_id);
 
-CREATE VIEW tram_stops AS 
-SELECT DISTINCT s.stop_id,s.stop_name 
-FROM gtfs_routes AS r 
-INNER JOIN gtfs_trips AS t ON r.route_id = t.route_id 
-INNER JOIN gtfs_stop_times AS st ON st.trip_id = t.trip_id 
-INNER JOIN gtfs_stops AS s ON s.stop_id = st.stop_id 
-WHERE route_short_name SIMILAR TO '[0-9]{1,2}';
 
