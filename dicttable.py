@@ -6,7 +6,7 @@ class DictRow(object):
 		self.idx = idx
 
 	def _dict_from_item(self,line):
-		itemdict = { (self.ilut[i],itm) for (i,itm) in enumerate(line)}
+		itemdict = { self.ilut[i] :itm for (i,itm) in enumerate(line)}
 		return itemdict
 	
 	
@@ -27,37 +27,37 @@ class DictRow(object):
 		return len(self.lut)
 
 	def __lt__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] < other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
 	
 	def __gt__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] > other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
 	
 	def __le__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] <= other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
 
 	def __ge__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] >= other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
 
 	def __eq__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] == other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
 
 	def __ne__(self,other):
-		if type(other)==DictRow:
+		if isinstance(other,DictRow):
 			return self.dtable.table[self.idx] != other.dtable.table[other.idx]
 		else:
 			raise TypeError("Not comparing with DictRow")
@@ -84,13 +84,15 @@ class DictTableIterator(object):
 
 
 class DictTable(object):
-	def __init__(self,columns):
+	def __init__(self,columns,content=None):
 		self.columns = columns
 		# column name : number
 		self.lut = {k:v for (v,k) in enumerate(columns)}
 		# number : column name
 		self.ilut = {k:v for (k,v) in enumerate(columns)}
 		self.table = []
+		if content and len(content[0]) == len(self.lut):
+			self.table = content
 
 	def _item_from_dict(self,adict):
 		line = []
@@ -100,19 +102,24 @@ class DictTable(object):
 	
 	
 	def __getitem__(self,idx):
-		return DictRow(self,idx)
+		if isinstance(idx,int):
+			return DictRow(self,idx)
+		elif isinstance(idx,slice):
+			return DictTable(self.columns,self.table[idx])
+		else:
+			raise KeyError("Key must be int or slice")
 	
 	def __len__(self):
 		return len(self.table)
 	
 	def __setitem__(self,idx,val):
-		if type(val) == list:
+		if isinstance(val, list):
 			if len(val) != len(self.lut):
 				raise TypeError("Trying to insert item with wrong number of columns")
 			self.table[idx]=val
-		elif type(val) == dict:
+		elif isinstance(val, dict):
 			_item_from_dict(self,idx,val)
-		elif type(val) == DictRow:
+		elif isinstance(val, DictRow):
 			self.table[idx]=val.to_list()
 	def __iter__(self):
 		return DictTableIterator(self)
@@ -123,4 +130,18 @@ class DictTable(object):
 	def append(self,item):
 		self.table.append([])
 		self[-1]=item
+	
 
+	def key_sort(self,key):
+		if isinstance(key, str):
+			self.table.sort(key=lambda line: line[self.lut[key]])
+		elif isinstance(key, list) or isinstance(key, tuple):
+			self.table.sort(key=lambda line: tuple(line[self.lut[k]] for k in key))
+		else:
+			raise TypeError("Key must be string or list or tuple")
+
+	
+	def col_convert(self,col,conv):
+		idx = self.lut[col]
+		for row in self.table:
+			row[idx] = conv(row[idx])
