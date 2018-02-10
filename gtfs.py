@@ -201,7 +201,8 @@ def save_gtfs(filename,tables):
 		for (name,table) in tables.items():
 			fieldnames = table[0].keys()
 			tablef = tempfile.NamedTemporaryFile(mode="w",encoding="utf-8")
-			writer=csv.DictWriter(tablef,fieldnames)
+			#FIXME: extrasaction is set to ignore due to bug in csv.py in Python3.6
+			writer=csv.DictWriter(tablef,fieldnames,extrasaction="ignore")
 			writer.writeheader()
 			writer.writerows(table)
 			tablef.flush()
@@ -224,7 +225,8 @@ def save_gtfs_table(filename,table):
 	fieldnames = table[0].keys()
 	print("Fieldnames: {}".format(fieldnames))
 	tablef = open(filename,mode="w",encoding="utf-8")
-	writer=csv.DictWriter(tablef,fieldnames)
+	#FIXME: extrasaction is set to ignore due to bug in csv.py in Python3.6
+	writer=csv.DictWriter(tablef,fieldnames,extrasaction="ignore")
 	writer.writeheader()
 	writer.writerows(table)
 	tablef.close()
