@@ -1,4 +1,5 @@
 class DictRow(object):
+	""" Manages one row of DictTable """
 	def __init__(self,dtable,idx):
 		self.dtable = dtable
 		self.lut = dtable.lut
@@ -19,10 +20,12 @@ class DictRow(object):
 			return restval
 	
 	def to_dict(self):
+		""" Returns current row as dictionary """
 		line = self.dtable.table[self.idx]
 		return self._dict_from_item(line)
 
 	def to_list(self):
+		""" Returns current row as list """
 		return self.dtable.table[self.idx]
 
 	def __getitem__(self,key):
@@ -109,6 +112,7 @@ class DictTableIterator(object):
 
 
 class DictTable(object):
+	""" Manages table data with dictionary-like access to the columns """
 	def __init__(self,columns,content=None):
 		self.columns = columns
 		# column name : number
@@ -157,6 +161,7 @@ class DictTable(object):
 	
 
 	def key_sort(self,key):
+		""" Sort by given column name[s] """
 		if isinstance(key, str):
 			self.table.sort(key=lambda line: line[self.lut[key]])
 		elif isinstance(key, list) or isinstance(key, tuple):
@@ -166,6 +171,7 @@ class DictTable(object):
 
 	
 	def col_convert(self,col,conv):
+		""" Aply given conversion function to the  data in given column """
 		idx = self.lut[col]
 		for row in self.table:
 			row[idx] = conv(row[idx])

@@ -10,6 +10,7 @@ from pprint import pprint
 from dicttable import DictTable
 
 class StopTime:
+	""" Manages stop times for stop_times table """
 	def __init__(self,astr):
 		self.hour = int(astr[:2])
 		self.min = int(astr[3:5])
@@ -32,7 +33,7 @@ class StopTime:
 		return str(self)
 
 class GTFSCalendar(object):
-	""" Class for managing GTFS calendar_dates table"""
+	""" Manages GTFS calendar_dates table"""
 	outdir = 'output'
 	def __init__(self,query,day,month,year):
 		self.gvdstart = datetime.date(day,month,year) 
@@ -170,10 +171,16 @@ class GTFSStreamTable(object):
 				processed += len(res)
 		out.close()
 		
+def sort_stop_times(st):
+	st.col_convert('stop_sequence',int)
+	st.col_convert('arrival_time',StopTime)
+	st.col_convert('departure_time',StopTime)
+	st.key_sort(['trip_id','stop_sequence']) 
 
-
+# Whole GTFS load and save
 
 def load_gtfs(filename,encoding='utf-8'):
+	""" Loads GTFS file from .zip to the dictionary of DictTables """
 	tables={}
 	with zipfile.ZipFile(filename) as gtfs:
 		for fname in gtfs.namelist():
@@ -187,14 +194,9 @@ def load_gtfs(filename,encoding='utf-8'):
 	return tables
 
 
-def sort_stop_times(st):
-	st.col_convert('stop_sequence',int)
-	st.col_convert('arrival_time',StopTime)
-	st.col_convert('departure_time',StopTime)
-	st.key_sort(['trip_id','stop_sequence']) 
 	
-
 def save_gtfs(filename,tables):
+	""" Saves dictionary of DictTables to the GTFS .zip file """
 	with zipfile.ZipFile(filename,"w",compression=zipfile.ZIP_DEFLATED) as zipf:
 		for (name,table) in tables.items():
 			fieldnames = table[0].keys()
@@ -206,8 +208,10 @@ def save_gtfs(filename,tables):
 			zipf.write(tablef.name,name+".txt")
 			tablef.close()
 
+# One table load and save
 
 def load_gtfs_table(filename):
+	""" Loads one table (from .txt) into DictTable """
 	with open(filename) as tablefile:
 		lines = tablefile.readlines()
 		lines = list(map(lambda x: x.strip(),lines))
@@ -216,6 +220,7 @@ def load_gtfs_table(filename):
 	return DictTable(columns,[line for line in table])
 
 def save_gtfs_table(filename,table):
+	""" Saves one table from DictTable to .txt file """
 	fieldnames = table[0].keys()
 	print("Fieldnames: {}".format(fieldnames))
 	tablef = open(filename,mode="w",encoding="utf-8")
