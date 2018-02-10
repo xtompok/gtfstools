@@ -9,6 +9,14 @@ class DictRow(object):
 		itemdict = { self.ilut[i] :itm for (i,itm) in enumerate(line)}
 		return itemdict
 	
+	def keys(self):
+		return self.dtable.columns
+
+	def get(self,key,restval):
+		try:
+			return self.dtable.table[self.idx][self.lut[key]]
+		except KeyError:
+			return restval
 	
 	def to_dict(self):
 		line = self.dtable.table[self.idx]
@@ -22,6 +30,9 @@ class DictRow(object):
 
 	def __setitem__(self,key,val):
 		self.dtable.table[self.idx][self.lut[key]]=val
+
+	def __iter__(self):
+		return DictRowIterator(self.dtable)
 
 	def __len__(self):
 		return len(self.lut)
@@ -65,6 +76,20 @@ class DictRow(object):
 	def __repr__(self):
 		return repr(self.to_dict())
 		
+class DictRowIterator(object):
+	def __init__(self,dtable):
+		self.idx = 0
+		self.dtable = dtable
+	
+	def __iter__(self):
+		return self
+	
+	def __next__(self):
+		if self.idx >= len(self.dtable.columns):
+			raise StopIteration
+		item = self.dtable.columns[self.idx]
+		self.idx+= 1
+		return item
 	
 
 class DictTableIterator(object):
@@ -94,11 +119,10 @@ class DictTable(object):
 		if content and len(content[0]) == len(self.lut):
 			self.table = content
 
-	def _item_from_dict(self,adict):
-		line = []
-		for i in range(len(self.ilut)):
-			line.append(adict[self.ilut[i]])
-		return line
+	def _item_from_dict(self,lidx,adict):
+		self.table[lidx] = [None for _ in self.ilut]
+		for (cidx,key) in self.ilut.items():
+			self.table[lidx][cidx]=adict[key]
 	
 	
 	def __getitem__(self,idx):
@@ -118,7 +142,7 @@ class DictTable(object):
 				raise TypeError("Trying to insert item with wrong number of columns")
 			self.table[idx]=val
 		elif isinstance(val, dict):
-			_item_from_dict(self,idx,val)
+			self._item_from_dict(idx,val)
 		elif isinstance(val, DictRow):
 			self.table[idx]=val.to_list()
 	def __iter__(self):
@@ -145,3 +169,21 @@ class DictTable(object):
 		idx = self.lut[col]
 		for row in self.table:
 			row[idx] = conv(row[idx])
+	
+	def delete_column(self,col):
+		try:
+			del self.lut[col]
+		except KeyError:
+			pass
+		try:
+			self.columns.remove(col)
+		except ValueError:
+			pass
+
+		to_delete = None
+		for key in self.ilut:
+			if self.ilut[key] == col:
+				to_delete = key
+				break
+		if to_delete:
+			del self.ilut[to_delete]

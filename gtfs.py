@@ -207,3 +207,19 @@ def save_gtfs(filename,tables):
 			tablef.close()
 
 
+def load_gtfs_table(filename):
+	with open(filename) as tablefile:
+		lines = tablefile.readlines()
+		lines = list(map(lambda x: x.strip(),lines))
+		table = csv.reader(lines)
+	columns = next(table)
+	return DictTable(columns,[line for line in table])
+
+def save_gtfs_table(filename,table):
+	fieldnames = table[0].keys()
+	print("Fieldnames: {}".format(fieldnames))
+	tablef = open(filename,mode="w",encoding="utf-8")
+	writer=csv.DictWriter(tablef,fieldnames)
+	writer.writeheader()
+	writer.writerows(table)
+	tablef.close()
